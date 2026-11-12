@@ -24,7 +24,9 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    service: 'Payment Wallet API'
+    service: 'Payment Wallet API',
+    port: process.env.PORT || 5000,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -52,10 +54,10 @@ const startServer = async () => {
     const { autoSeedInitialData } = require('./scripts/seed');
     await autoSeedInitialData();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`=========================================`);
       console.log(`🚀 Wallet API Server running on port ${PORT}`);
-      console.log(`👉 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`👉 Health check: http://0.0.0.0:${PORT}/api/health`);
       console.log(`=========================================`);
     });
   } catch (error) {

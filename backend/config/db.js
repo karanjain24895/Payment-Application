@@ -51,7 +51,7 @@ const startLocalMongoServer = async () => {
       const text = data.toString();
       if (text.includes('Waiting for connections') && !isResolved) {
         isResolved = true;
-        console.log('✅ Local MongoDB daemon is ready and accepting connections.');
+        console.log('Local MongoDB daemon is ready and accepting connections.');
         resolve();
       }
     });
@@ -85,25 +85,35 @@ const startLocalMongoServer = async () => {
 
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wallet_app';
+  const isSrv = uri.startsWith('mongodb+srv://');
+  const isLocalhost = uri.includes('127.0.0.1') || uri.includes('localhost');
+  const isCloudOrProduction = isSrv || !isLocalhost || !!process.env.RENDER || process.env.NODE_ENV === 'production';
+
+  const connectionOptions = {
+    serverSelectionTimeoutMS: 8000
+  };
+
+  if (!isSrv && isLocalhost) {
+    connectionOptions.directConnection = true;
+  }
 
   try {
-    console.log(`Connecting to MongoDB at ${uri} ...`);
-    const conn = await mongoose.connect(uri, {
-      directConnection: true,
-      serverSelectionTimeoutMS: 2000
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`Connecting to MongoDB at: ${uri.replace(/:([^:@]+)@/, ':****@')} ...`);
+    const conn = await mongoose.connect(uri, connectionOptions);
+    console.log(`MongoDB Connected successfully: ${conn.connection.host}`);
   } catch (err) {
-    console.warn(`Initial connection check (${err.message}). Launching local MongoDB server...`);
+    if (isCloudOrProduction) {
+      console.error('MongoDB cloud connection failed:', err.message);
+      throw err;
+    }
+
+    console.warn(`Local connection attempt failed (${err.message}). Launching local MongoDB daemon...`);
     try {
       await startLocalMongoServer();
-      const conn = await mongoose.connect(uri, {
-        directConnection: true,
-        serverSelectionTimeoutMS: 5000
-      });
+      const conn = await mongoose.connect(uri, connectionOptions);
       console.log(`MongoDB Connected successfully: ${conn.connection.host}`);
     } catch (launchErr) {
-      console.error('Failed to start/connect to MongoDB:', launchErr.message);
+      console.error('Failed to start/connect to local MongoDB:', launchErr.message);
       throw launchErr;
     }
   }
@@ -111,7 +121,6 @@ const connectDB = async () => {
 
 process.on('SIGINT', () => {
   if (spawnedMongoProcess) {
-    console.log('Stopping spawned MongoDB daemon...');
     spawnedMongoProcess.kill();
   }
   process.exit(0);
