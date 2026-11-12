@@ -1,0 +1,17 @@
+{
+  "name": "payment-wallet-application",
+  "version": "1.0.0",
+  "description": "Full-stack Virtual Payment Wallet Application with React, Node.js, Express, and MongoDB",
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "seed": "cd backend && npm run seed"
+  },
+  "keywords": ["wallet", "react", "express", "nodejs", "mongodb", "payments"],
+  "author": "",
+  "license": "ISC"
+}
+
